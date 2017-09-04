@@ -1,8 +1,13 @@
 package top.smartsport.www.fragment;
 
+import android.content.Intent;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.util.DisplayMetrics;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -12,10 +17,15 @@ import org.json.JSONObject;
 import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.ViewInject;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import top.smartsport.www.R;
+import top.smartsport.www.activity.ActivityTrainingDetails;
+import top.smartsport.www.activity.CoachDetailActivity;
+import top.smartsport.www.activity.ConsultDetailActivity;
+import top.smartsport.www.activity.StarDetailActivity;
 import top.smartsport.www.adapter.CoachesAdapter;
 import top.smartsport.www.adapter.CoursesAdapter;
 import top.smartsport.www.adapter.NewsAdapter;
@@ -32,6 +42,7 @@ import top.smartsport.www.bean.News;
 import top.smartsport.www.bean.Players;
 import top.smartsport.www.bean.RegInfo;
 import top.smartsport.www.bean.TokenInfo;
+import top.smartsport.www.utils.JsonUtil;
 import top.smartsport.www.widget.Banner;
 import top.smartsport.www.widget.HorizontalListView;
 import top.smartsport.www.widget.MyGridView;
@@ -76,8 +87,8 @@ public class ZXQXFragment extends BaseFragment {
     private HorizontalListView fm_grid_tjjl;
 
     private PlayersAdapter playersAdapter;//今日球星
-    @ViewInject(R.id.gridview)
-    private GridView gridview;
+    @ViewInject(R.id.listview)
+    private HorizontalListView listview;
 
     private NewsHotAdapter newsHotAdapter;
     @ViewInject(R.id.fm_list_top_news)
@@ -87,6 +98,7 @@ public class ZXQXFragment extends BaseFragment {
     private ScrollView scrollView;
     private ViewPager viewpager;
 
+
     public static ZXQXFragment newInstance() {
         ZXQXFragment fragment = new ZXQXFragment();
         Bundle bundle = new Bundle();
@@ -94,9 +106,15 @@ public class ZXQXFragment extends BaseFragment {
         return fragment;
     }
 
+
+
     @Override
     protected void initView() {
-        gridview.setFocusable(false);
+        fm_grid_tjkc.setOnTouchListener(HorizontalListView.hlv);
+        fm_grid_tjjl.setOnTouchListener(HorizontalListView.hlv);
+        listview.setOnTouchListener(HorizontalListView.hlv);
+
+        listview.setFocusable(false);
 //        thtc_gridView = (GridView) scrollView.findViewById(R.id.thtc_layout).findViewById(R.id.gridview);
 //
         regInfo = RegInfo.newInstance();
@@ -111,18 +129,51 @@ public class ZXQXFragment extends BaseFragment {
         coursesAdapter = new CoursesAdapter(getActivity());
         fm_grid_tjkc.setAdapter(coursesAdapter);
         fm_grid_tjkc.setViewPager(viewpager);
-        newsAdapter= new NewsAdapter(getActivity());
-        fm_list_qxzx.setAdapter(newsAdapter);
+        fm_grid_tjkc.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                startActivity(new Intent(getActivity(), ActivityTrainingDetails.class).putExtra("id", ((Courses) adapterView.getItemAtPosition(i)).getId()));
 
+            }
+        });
+        newsAdapter = new NewsAdapter(getActivity());
+        fm_list_qxzx.setAdapter(newsAdapter);
+        fm_list_qxzx.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                startActivity(new Intent(getActivity(), ConsultDetailActivity.class).putExtra("id", ((News) adapterView.getItemAtPosition(i)).getId() + ""));
+
+            }
+        });
         coachesAdapter = new CoachesAdapter(getActivity());
         fm_grid_tjjl.setAdapter(coachesAdapter);
         fm_grid_tjjl.setViewPager(viewpager);
+        fm_grid_tjjl.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Coaches coache = (Coaches) adapterView.getItemAtPosition(i);
+                startActivity(new Intent(getActivity(), CoachDetailActivity.class).putExtra("data", coache));
+
+            }
+        });
         playersAdapter = new PlayersAdapter(getActivity());
-        gridview.setAdapter(playersAdapter);
+        listview.setAdapter(playersAdapter);
 
         newsHotAdapter = new NewsHotAdapter(getActivity());
         fm_list_top_news.setAdapter(newsAdapter);
-
+        fm_list_top_news.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                startActivity(new Intent(getActivity(), ConsultDetailActivity.class).putExtra("data", (Serializable) adapterView.getItemAtPosition(i)));
+            }
+        });
+        listview.setViewPager(viewpager);
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                startActivity(new Intent(getActivity(), StarDetailActivity.class).putExtra("data", JsonUtil.entityToJson(adapterView.getItemAtPosition(i))));
+            }
+        });
         getData();
 
     }
@@ -143,14 +194,14 @@ public class ZXQXFragment extends BaseFragment {
 
     /**
      * 接口
-     * */
-    private void getData(){
+     */
+    private void getData() {
         JSONObject json = new JSONObject();
         try {
-            json.put("client_id",client_id);
-            json.put("state",state);
-            json.put("access_token",access_token);
-            json.put("action","getQxNews");
+            json.put("client_id", client_id);
+            json.put("state", state);
+            json.put("access_token", access_token);
+            json.put("action", "getQxNews");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -177,16 +228,6 @@ public class ZXQXFragment extends BaseFragment {
                 playersAdapter.addAll(playerses);
                 newsHotAdapter.addAll(hotNewses);
 
-                DisplayMetrics dm = new DisplayMetrics();//获取分辨率
-                getActivity().getWindowManager().getDefaultDisplay().getMetrics(dm);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        (dm.widthPixels-50)*playerses.size(), LinearLayout.LayoutParams.MATCH_PARENT);
-                params.rightMargin=30;
-                gridview.setLayoutParams(params);
-                gridview.setColumnWidth(dm.widthPixels-80);
-                gridview.setHorizontalSpacing(20);
-                gridview.setStretchMode(gridview.STRETCH_SPACING_UNIFORM);
-                gridview.setNumColumns(playerses.size());
             }
         });
     }

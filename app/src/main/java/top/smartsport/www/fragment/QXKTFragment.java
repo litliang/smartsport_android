@@ -1,5 +1,6 @@
 package top.smartsport.www.fragment;
 
+import android.content.Intent;
 import android.database.DataSetObserver;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -8,12 +9,16 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import app.base.MapAdapter;
 import app.base.MapContent;
 import com.bumptech.glide.load.engine.Resource;
+
+import intf.BundleBuilder;
+import top.smartsport.www.activity.ActivityTrainingDetails;
 import top.smartsport.www.listview_pulltorefresh.PullToRefreshBase;
 import top.smartsport.www.listview_pulltorefresh.PullToRefreshListView;
 import intf.FunCallback;
@@ -27,6 +32,7 @@ import top.smartsport.www.base.BaseActivity;
 import top.smartsport.www.base.BaseFragment;
 import top.smartsport.www.bean.NetEntity;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -83,6 +89,13 @@ public class QXKTFragment extends BaseFragment {
                 return true;
             }
         };
+        pullrefreshlistview.getRefreshableView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Map map = (Map) adapterView.getItemAtPosition(i);
+                startActivity(new Intent(getActivity(),ActivityTrainingDetails.class).putExtra("id", map.get("id").toString()));
+            }
+        });
         reload(mapadapter);
         pullrefreshlistview.getFooterLoadingLayout().setVisibility(View.GONE);
         pullrefreshlistview.setOnRefreshListener(new PullToRefreshBase.OnRefreshListener<ListView>() {

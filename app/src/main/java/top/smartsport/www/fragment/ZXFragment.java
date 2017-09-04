@@ -69,6 +69,7 @@ public class ZXFragment extends BaseFragment {
         zxallAdapter = new ZXALLAdapter(getActivity(),fragmentManager,tabTitle,listFM);
         zx_viewpager.setAdapter(zxallAdapter);
         zx_tab.setViewPager(zx_viewpager);
+
     }
 
     @Override

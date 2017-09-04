@@ -23,12 +23,15 @@ import org.xutils.view.annotation.ContentView;
 import org.xutils.view.annotation.ViewInject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import app.base.action.Epr;
 import top.smartsport.www.H;
 import top.smartsport.www.O;
 import top.smartsport.www.R;
 import top.smartsport.www.base.BaseActivity;
+import top.smartsport.www.base.BaseFragment;
 import top.smartsport.www.bean.AuthInfo;
 import top.smartsport.www.bean.BSSZInfo;
 import top.smartsport.www.bean.BSZTInfo;
@@ -69,6 +72,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
     private String mdImei; //唯一标识加密
     private RegInfo regInfo;
     private AuthInfo authInfo;
+
     private TokenInfo tokenInfo;
 
     private String client_id;
@@ -103,13 +107,16 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
             public boolean handleMessage(Message msg) {
 
                 if (SPUtils.getBoolean(getBaseContext(), "welcomeGuide", "isFirst")) {
-                    getIMEI();
+//                    getIMEI();
+                    loadCityList();
+                    getCity();
+                    getChoice();
                 } else {
 
                 }
                 return false;
             }
-        }).sendEmptyMessageDelayed(0,0);
+        }).sendEmptyMessageDelayed(0, 0);
 
         showLeft(false);//隐藏返回键
 
@@ -126,13 +133,17 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         main_bottom_tabs.setOnCheckedChangeListener(MainActivity.this);
         // 默认选中第一个标签页
         ((RadioButton) findViewById(R.id.main_tabs_home)).setChecked(true);
-
+//        Epr.parseParam("Print(Clickactivityid($ss:123%s456))",(RadioButton) findViewById(R.id.main_tabs_home)).innerrun();
+//        goActivity(ActivityTrainingDetails.class);
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {
+            wdFragment.initUserInfo();
+        }
+        currfragment.refresh();
     }
 
     @Override
@@ -149,16 +160,17 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
                 changeTabContent(bsFragment, BSFragment.TAG);
                 break;
             case R.id.main_tabs_me://我的
-                String phone = (String) SPUtils.get(getApplicationContext(),"USER","");
-                if(phone==null||phone.equals("")){
-                    startActivity(new Intent(getApplicationContext(),LoginActivity.class));
-                }else {
+                String phone = (String) SPUtils.get(getApplicationContext(), "USER", "");
+                if (phone == null || phone.equals("")) {
+                    startActivityForResult(new Intent(getApplicationContext(), LoginActivity.class), 1);
+
+                } else {
                     changeTabContent(wdFragment, WDFragment.TAG);
-                }break;
+                }
+                break;
 
         }
     }
-
 
 
     /**
@@ -177,6 +189,8 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         fragmentTransaction.commit();
     }
 
+    BaseFragment currfragment;
+
     /**
      * 切换Tab
      *
@@ -194,6 +208,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         fragmentTransaction.show(fragment);
         fragmentTransaction.commitAllowingStateLoss();
         mCurrentFragmentTag = tag;
+        currfragment = (BaseFragment) fragment;
     }
 
     /**
@@ -206,27 +221,28 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
     }
 
 
-    private void getIMEI(){
+    private void getIMEI() {
         TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         //获取手机imei
         imei = tm.getDeviceId();
         getRegInfo(imei);
     }
+
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 1:
                     RegInfo.setRegInfo(regInfo);
-                    Log.i("___regInfo","regInfo");
+                    Log.i("___regInfo", "regInfo");
                     break;
                 case 2:
                     AuthInfo.setAuthInfo(authInfo);
-                    Log.i("___authInfo","authInfo");
+                    Log.i("___authInfo", "authInfo");
                     break;
                 case 3:
                     TokenInfo.setTokenInfo(tokenInfo);
-                    Log.i("____tokenInfo","tokenInfo");
+                    Log.i("____tokenInfo", "tokenInfo");
                     break;
             }
         }
@@ -240,8 +256,8 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         mdImei = MD5Util.encrypt(imei);
         JSONObject json = new JSONObject();
         try {
-            json.put("imei",imei+"");
-            json.put("code",mdImei);
+            json.put("imei", imei + "");
+            json.put("code", mdImei);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -280,7 +296,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
 
         JSONObject json = new JSONObject();
         try {
-            json.put("client_id",client_id);
+            json.put("client_id", client_id);
             json.put("state", state);
             json.put("response_type", "code");
         } catch (JSONException e) {
@@ -295,7 +311,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
 
             @Override
             public void onSuccess(NetEntity entity) {
-                Log.i("________++___",entity.getStatus());
+                Log.i("________++___", entity.getStatus());
                 authInfo = entity.toObj(AuthInfo.class);
 //                AuthInfo.setAuthInfo(authInfo);
                 Message msg = new Message();
@@ -308,10 +324,9 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
     }
 
 
-
     //获取Access_token
 
-    private void getTokenInfo(){
+    private void getTokenInfo() {
         url = regInfo.getToken_url();
         client_id = regInfo.getApp_key();
         String client_secret = regInfo.getApp_secret();
@@ -320,11 +335,11 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         String state = regInfo.getSeed_secret();
         JSONObject json = new JSONObject();
         try {
-            json.put("client_id",client_id);
-            json.put("grant_type",grant_type);
-            json.put("client_secret",client_secret);
-            json.put("code",code);
-            json.put("state",state);
+            json.put("client_id", client_id);
+            json.put("grant_type", grant_type);
+            json.put("client_secret", client_secret);
+            json.put("code", code);
+            json.put("state", state);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -333,38 +348,42 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
         X.Post(url, json, new MyCallBack<String>() {
             @Override
             protected void onFailure(String message) {
-                Log.i("________**",message+"");
+                Log.i("________**", message + "");
                 showToast(message);
             }
 
             @Override
             public void onSuccess(NetEntity entity) {
-                Log.i("______!!",entity.getStatus());
+                Log.i("______!!", entity.getStatus());
                 tokenInfo = entity.toObj(TokenInfo.class);
 //                TokenInfo.setTokenInfo(tokenInfo);
                 access_token = tokenInfo.getAccess_token();
                 Message msg = new Message();
                 msg.what = 3;
                 mHandler.sendMessage(msg);
-                loadCityList();
-                getCity();
-                getChoice();
+
             }
         });
     }
+
     /**
      * 获取城市和热门城市
-     * */
+     */
     private List<HotCity> hotCityList = new ArrayList<>();
     private List<ComCity> comCityList = new ArrayList<>();
+
     private void loadCityList() {
+        regInfo = RegInfo.newInstance();
+        client_id = regInfo.getApp_key();
+        state = regInfo.getSeed_secret();
+        url = regInfo.getAuthorize_url();
         String url = regInfo.getSource_url();
         JSONObject json = new JSONObject();
         try {
-            json.put("client_id",client_id);
-            json.put("state",state);
-            json.put("access_token",access_token);
-            json.put("action","getCitys");
+            json.put("client_id", client_id);
+            json.put("state", state);
+            json.put("access_token", access_token);
+            json.put("action", "getCitys");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -381,10 +400,10 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
             public void onSuccess(NetEntity entity) {
                 JsonElement jsonElement = entity.getData();
                 try {
-                    JSONObject json =  new JSONObject(jsonElement.toString());
+                    JSONObject json = new JSONObject(jsonElement.toString());
                     JSONArray hotCity = json.optJSONArray("hotCity");
                     JSONArray cityList = json.optJSONArray("cityList");
-                    for(int i =0;i<hotCity.length();i++){
+                    for (int i = 0; i < hotCity.length(); i++) {
                         JSONObject obj = (JSONObject) hotCity.get(i);
                         String title = obj.optString("title");
                         String area_id = obj.optString("area_id");
@@ -396,7 +415,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
                         hotCityList.add(c);
                     }
 
-                    for(int i =0;i<cityList.length();i++){
+                    for (int i = 0; i < cityList.length(); i++) {
                         JSONObject obj = (JSONObject) cityList.get(i);
                         String title = obj.optString("title");
                         String area_id = obj.optString("area_id");
@@ -419,15 +438,15 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
 
     /**
      * 获取二级城市
-     * */
-    private void getCity(){
+     */
+    private void getCity() {
         String url = regInfo.getSource_url();
         JSONObject json = new JSONObject();
         try {
-            json.put("client_id",client_id);
-            json.put("state",state);
-            json.put("access_token",access_token);
-            json.put("action","getCounties");
+            json.put("client_id", client_id);
+            json.put("state", state);
+            json.put("access_token", access_token);
+            json.put("action", "getCounties");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -447,18 +466,19 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
 
     /**
      * 获取筛选条件
-     * */
+     */
     private List<SSJBInfo> ssjbInfoList = new ArrayList<>();
     private List<BSZTInfo> bsztInfoList = new ArrayList<>();
     private List<BSSZInfo> bsszInfoList = new ArrayList<>();
-    private void getChoice(){
+
+    private void getChoice() {
         String url = regInfo.getSource_url();
         JSONObject json = new JSONObject();
         try {
-            json.put("client_id",client_id);
-            json.put("state",state);
-            json.put("access_token",access_token);
-            json.put("action","getMatchFilter");
+            json.put("client_id", client_id);
+            json.put("state", state);
+            json.put("access_token", access_token);
+            json.put("action", "getMatchFilter");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -476,7 +496,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
                     JSONArray levelList = json.optJSONArray("level");
                     JSONArray statusList = json.optJSONArray("status");
                     JSONArray typeList = json.optJSONArray("type");
-                    for(int i =0;i<levelList.length();i++){
+                    for (int i = 0; i < levelList.length(); i++) {
                         JSONObject obj = (JSONObject) levelList.get(i);
                         String id = obj.optString("id");
                         String name = obj.optString("name");
@@ -486,7 +506,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
                         ssjbInfoList.add(info);
 
                     }
-                    for(int i=0;i<statusList.length();i++){
+                    for (int i = 0; i < statusList.length(); i++) {
                         JSONObject obj = (JSONObject) statusList.get(i);
                         String id = obj.optString("id");
                         String name = obj.optString("name");
@@ -497,7 +517,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
 
                     }
 
-                    for(int i=0;i<typeList.length();i++){
+                    for (int i = 0; i < typeList.length(); i++) {
                         JSONObject obj = (JSONObject) typeList.get(i);
                         String id = obj.optString("id");
                         String name = obj.optString("name");
@@ -510,7 +530,7 @@ public class MainActivity extends BaseActivity implements RadioGroup.OnCheckedCh
                     O.setSSJB(ssjbInfoList);
                     O.setBSZT(bsztInfoList);
                     O.setBSSZ(bsszInfoList);
-                }catch (JSONException e) {
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }

@@ -1,5 +1,6 @@
 package top.smartsport.www.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -49,6 +50,12 @@ public class BSFragment extends BaseFragment {
         addFragment();
     }
 
+    @Override
+    public void refresh() {
+        super.refresh();
+        ((BaseFragment)listFM.get(ss_viewpager.getCurrentItem())).refresh();
+    }
+
     private void addFragment(){
         listFM = new ArrayList<>();
         listFM.add(BSSSFragment.newInstance());
@@ -62,7 +69,7 @@ public class BSFragment extends BaseFragment {
     private void getEvent(View view){
         switch (view.getId()){
             case R.id.bs_ll_choice:
-                toActivity(BSChoiceActivity.class);
+                startActivityForResult(new Intent(getContext(),BSChoiceActivity.class),0);
                 break;
         }
     }

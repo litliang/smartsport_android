@@ -3,8 +3,20 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="distributionType" value="DEFAULT_WRAPPED" />
+        <option name="distributionType" value="LOCAL" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleHome" value="D:/gradle-4.1" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/Android-PullToRefresh" />
+            <option value="$PROJECT_DIR$/LePlayerSdk" />
+            <option value="$PROJECT_DIR$/LePlayerSkin" />
+            <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/autolayout" />
+          </set>
+        </option>
+        <option name="resolveModulePerSourceSet" value="false" />
       </GradleProjectSettings>
     </option>
   </component>

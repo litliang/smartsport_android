@@ -1,5 +1,6 @@
 package top.smartsport.www.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.view.View;
@@ -18,6 +19,7 @@ import java.util.List;
 import top.smartsport.www.R;
 import top.smartsport.www.activity.BSDetailActivity;
 import top.smartsport.www.activity.LeTvPlayActivity;
+import top.smartsport.www.activity.LoginActivity;
 import top.smartsport.www.activity.ZBDetailActivity;
 import top.smartsport.www.adapter.BSssAdapter;
 import top.smartsport.www.adapter.BSzbAdapter;
@@ -31,6 +33,7 @@ import top.smartsport.www.bean.RegInfo;
 import top.smartsport.www.bean.TokenInfo;
 import top.smartsport.www.bean.ZBRows;
 import top.smartsport.www.listview_pulltorefresh.PullToRefreshListView;
+import top.smartsport.www.utils.SPUtils;
 import top.smartsport.www.widget.Banner;
 import top.smartsport.www.xutils3.MyCallBack;
 import top.smartsport.www.xutils3.X;
@@ -99,11 +102,17 @@ public class BSZBFragment extends BaseFragment{
         ptrlv.getRefreshableView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-                BSzbInfo info = bSzbAdapter.getItem(position);
-                Bundle bundle = new Bundle();
-                bundle.putSerializable(ZBDetailActivity.TAG,info);
-                toActivity(ZBDetailActivity.class,bundle);
+                String phone = (String) SPUtils.get(getContext(),"USER","");
+                if(phone==null||phone.equals("")){
+                    startActivity(new Intent(getActivity(),LoginActivity.class));
+
+                }else {
+                    BSzbInfo info = bSzbAdapter.getItem(position);
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable(ZBDetailActivity.TAG, info);
+                    toActivity(ZBDetailActivity.class, bundle);
 //                toActivity(LeTvPlayActivity.class);
+                }
             }
         });
 
